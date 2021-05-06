@@ -4,16 +4,6 @@ var input = loadJSON('input.json');
 
 var doc = app.activeDocument;
 
-//Changing App Name in a Text Layer
-//var layer9 = doc.layerSets.getByName('Layer 9');
-//var appNameText = layer9.layers[1];
-//appNameText.textItem.contents = input.appName;
-//appNameText.textItem.size = new UnitValue(14,"mm")
-
-//Changing Developer Name in a Text Layer
-//var developerNameText = layer9.layers[0];
-//developerNameText.textItem.contents = input.author;
-
 var layerSet = doc.layerSets;
 
 
@@ -24,10 +14,20 @@ for(var i = 0 ; i < layerSet.length ; i++){
       //Changing Store Name in a Text Layer
       if(currentLayer.name =="appstoreName"){
         currentLayer.textItem.contents = input.storeName;
+        var textWidth = (currentLayer.bounds[2] - currentLayer.bounds[0])/2;
+        var textHeight = currentLayer.bounds[3] - currentLayer.bounds[1];
+        var docWidth = doc.width/2;
+        var docHeight = doc.height;
+        //currentLayer.textItem.position = new Array(1000,4000);
       }
       //Changing CTA Text in a Text Layer
       else if(currentLayer.name =="ctaText"){
         currentLayer.textItem.contents = input.ctaText;
+        textColor = new SolidColor;
+        textColor.rgb.red = 255;
+        textColor.rgb.green = 255;
+        textColor.rgb.blue = 0;
+        currentLayer.textItem.color = textColor;
         //currentLayer.textItem.size = new UnitValue(10,"mm");
       }
       //Changing Developer Name in a Text Layer
@@ -40,31 +40,15 @@ for(var i = 0 ; i < layerSet.length ; i++){
         currentLayer.textItem.size = new UnitValue(14,"mm");
       }
       else if(currentLayer.name =="ctaColor"){
-        alert(currentLayer.kind);
-        //currentLayer.color=
+        var sColor = new SolidColor;
+        sColor.rgb.hexValue = rgbToHex(input.ctaBoxColorList[0],input.ctaBoxColorList[1],input.ctaBoxColorList[2]);
+        app.activeDocument.activeLayer = currentLayer;
+        setColorOfFillLayer(sColor);
       }
     }
   }
 } 
 
-//Changing Store Name in a Text Layer
-/*if(app.activeDocument.layers.getByName('Layer 3')){
-var layer3 = doc.layerSets.getByName('Layer 3');
-var storeNameText = layer3.layers[0];
-storeNameText.textItem.contents = input.storeName;
-}*/
-
-//Changing CTA Text in a Text Layer
-//var layer4 = doc.layerSets.getByName('Layer 4');
-//var ctaText = layer4.layers[0];
-//ctaText.textItem.contents = input.ctaText;
-//ctaText.textItem.font="";
-
-//App Image
-// var appImage = doc.layerSets.getByName('Layer 1').layers[0];
-// var appImageURL = input.screenshotUrl[0];
-// var downloadedAppImagePath = "/Users/yashsinha/Downloads/app-image.jpg";
-// app.system("curl -o " + downloadedAppImagePath + " " +  appImageURL)
 
 // Download the image
 var imageURL = input.iconUrl;
@@ -90,11 +74,15 @@ if(input.storeName == "Apple"){
 } else if(input.storeName == "Zhushou"){
   appstoreImagePath = "C:/Users/deepak.prasad/Desktop/python_scrapping/psd/AdobeJSIntegration/zhushou.png"
 }
+else if(input.storeName == "Tencent"){
+  appstoreImagePath = "C:/Users/deepak.prasad/Desktop/python_scrapping/psd/AdobeJSIntegration/tencent.png"
+}
 doc = app.activeDocument;
 place_image_here(appstoreImagePath , doc , 'appstoreIcon')
 
 //Saving the template in JPEG Format
 saveJpeg(input.appNameForSaving);
+app.activeDocument.close(SaveOptions.DONOTSAVECHANGES);
 
 
 //----------------------- FUNCTIONS -----------------------
@@ -235,4 +223,23 @@ function resizeImage(imageFile,fWidth,fHeight){
 
     // Convert the canvas size as informed above for the END RESULT
     app.activeDocument.resizeCanvas(UnitValue(fWidth,"px"),UnitValue(fHeight,"px"));
+}
+
+function setColorOfFillLayer( sColor ) {
+  var desc = new ActionDescriptor();
+  var ref = new ActionReference();
+  ref.putEnumerated(stringIDToTypeID('contentLayer'), charIDToTypeID('Ordn'), charIDToTypeID('Trgt'));
+  desc.putReference(charIDToTypeID('null'), ref);
+  var fillDesc = new ActionDescriptor();
+  var colorDesc = new ActionDescriptor();
+  colorDesc.putDouble(charIDToTypeID('Rd  '), sColor.rgb.red);
+  colorDesc.putDouble(charIDToTypeID('Grn '), sColor.rgb.green);
+  colorDesc.putDouble(charIDToTypeID('Bl  '), sColor.rgb.blue);
+  fillDesc.putObject(charIDToTypeID('Clr '), charIDToTypeID('RGBC'), colorDesc);
+  desc.putObject(charIDToTypeID('T   '), stringIDToTypeID('solidColorLayer'), fillDesc);
+  executeAction(charIDToTypeID('setd'), desc, DialogModes.NO);
+}
+
+function rgbToHex(r, g, b) {
+	return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
