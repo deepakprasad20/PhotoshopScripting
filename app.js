@@ -178,9 +178,11 @@ app.post('/app/:storeName/:appId',async function(req,res){
     let storeName = req.params['storeName'];
     let templateName = req.body.templateName;
     let ctaText = req.body.ctaText;
+    let ctaBoxColorList = req.body.ctaBoxColorList;
     let APIresponse = await getMetaData(appId, storeName,ctaText);
+    APIresponse['ctaBoxColorList'] = ctaBoxColorList;
 
-    res.send(APIresponse);
+    
 
     /*Write response into "input.json" file. Everytime 
     the below function runs, "input.json" get overridden.
@@ -215,7 +217,115 @@ app.post('/app/:storeName/:appId',async function(req,res){
             //-------------------
         }
     });
+    res.send(APIresponse);
 });
+app.post('/app/:storeName/:appId/:info',async function(req,res){
+
+    //console.log(req.body.templateName);
+    let appId = req.params['appId'];
+    let storeName = req.params['storeName'];
+    let info = req.params['info']
+    let templateName = req.body.templateName;
+    let ctaText = req.body.ctaText;
+    let ctaBoxColorList = req.body.ctaBoxColorList;
+    let APIresponse = await fetchMetaDataForTencent(appId,info);
+    APIresponse['ctaBoxColorList'] = ctaBoxColorList;
+    APIresponse['ctaText'] = ctaText;
+    APIresponse['storeName'] = 'Tencent';
+    APIresponse['ctaTextColorList'] = req.body.ctaTextColorList;
+
+    
+
+    /*Write response into "input.json" file. Everytime 
+    the below function runs, "input.json" get overridden.
+    */
+    fs.writeFile("./input.json", JSON.stringify(APIresponse, null, 2), err => {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("File sucessfully written!");
+
+            //------------------
+
+            //const { exec } = require("child_process");
+            //shell commands for windows and macOS may differ.
+
+            var commandtoRun = "C:\\Users\\deepak.prasad\\Desktop\\python_scrapping\\psd\\AdobeJSIntegration\\ScriptDroplet.exe C:\\Users\\deepak.prasad\\Desktop\\python_scrapping\\psd\\AdobeJSIntegration\\" + templateName;
+            console.log(commandtoRun);
+
+            const { exec } = require("child_process");
+            exec(commandtoRun, (error, data, getter) => {
+                if (error) {
+                    console.log("error", error.message);
+                    return;
+                }
+                if (getter) {
+                    console.log("data", data);
+                    return;
+                }
+                console.log("data", data);
+
+            });
+            //-------------------
+        }
+    });
+    res.send(APIresponse);
+});
+
+async function fetchMetaDataForTencent(appId , info){
+    const url = 'https://android.myapp.com/myapp/detail.htm?apkName=' +appId + '&info='+info;
+    try{
+        let response = await axios(url);
+        const html = response.data;
+        const $ = cheerio.load(html);
+        ////*[@id="J_DetDataContainer"]/div/div[1]/div[2]/div[1]/div[1]/font/font
+        let appName = $('#J_DetDataContainer').find('div').first()
+            .find('div').find('.det-ins-data').first()
+            .find('.det-name').first().find('.det-name-int').first().text();
+            
+        let appNameInEnglish = (await axios(returnOptions(appName))).data[0].translations[0].text;
+        let appNameArr = appNameInEnglish.split(" ");
+        let appNameWithNewLineCharacter = "";
+        for (var i = 0; i < appNameArr.length; i++) {
+            if (i % 2 == 0 && i != 0) {
+                appNameWithNewLineCharacter = appNameWithNewLineCharacter + "\r " + appNameArr[i];
+            } else {
+                appNameWithNewLineCharacter = appNameWithNewLineCharacter + " " + appNameArr[i];
+            }
+        }
+        let appNameForSaving = '';
+        if(appNameArr.length > 1){
+         appNameForSaving = appNameArr[0] + appNameArr[1];
+        } else{
+            appNameForSaving = appNameInEnglish
+        }
+            
+        
+
+        //*[@id="J_DetDataContainer"]/div/div[1]/div[1]/img
+        let iconUrl = $('#J_DetDataContainer').find('div').first().find('.det-icon > img').attr('src');
+
+        //*[@id="picInImgBoxImg0"]
+        let screenshotUrlArray = [];
+        $('#J_PicTurnHoverBox').find('span > span > div').map((i,elm) => {
+            screenshotUrlArray.push($(elm).find('img').first().attr('data-src'));
+        });
+
+        //*[@id="J_DetDataContainer"]/div/div[3]/div[6]/font/font
+        let author = $('#J_DetDataContainer').find('div').first().find('.det-othinfo-container .det-othinfo-data').eq(2).text();
+        let authorInEnglish = (await axios(returnOptions(author))).data[0].translations[0].text;
+        console.log(author);
+        return {
+            appName: appNameWithNewLineCharacter,
+            iconUrl: iconUrl,
+            screenshotUrl : screenshotUrlArray,
+            author : authorInEnglish,
+            appNameForSaving : appNameForSaving
+        };
+    }catch(error){
+        console.log(error);
+    }
+}
 
 
 module.exports = { getMetaData };
