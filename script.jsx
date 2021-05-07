@@ -24,9 +24,9 @@ for(var i = 0 ; i < layerSet.length ; i++){
       else if(currentLayer.name =="ctaText"){
         currentLayer.textItem.contents = input.ctaText;
         textColor = new SolidColor;
-        textColor.rgb.red = 255;
-        textColor.rgb.green = 255;
-        textColor.rgb.blue = 0;
+        textColor.rgb.red = input.ctaTextColorList[0];
+        textColor.rgb.green = input.ctaTextColorList[1];
+        textColor.rgb.blue = input.ctaTextColorList[2];
         currentLayer.textItem.color = textColor;
         //currentLayer.textItem.size = new UnitValue(10,"mm");
       }
@@ -102,7 +102,14 @@ function loadJSON(relPath){
 //Save JPEG
 function saveJpeg(name){
 
-    var file = new File('C:/Users/deepak.prasad/Desktop/python_scrapping/psd/AdobeJSIntegration'+ '/' + name + '.jpg');
+    var fileName = 'C:/Users/deepak.prasad/Desktop/python_scrapping/psd/AdobeJSIntegration'+ '/' + name + '.jpg';
+    var file = new File(fileName);
+    var i = 1;
+    while(file.exists){
+      fileName = 'C:/Users/deepak.prasad/Desktop/python_scrapping/psd/AdobeJSIntegration'+ '/' + name + "(" + i + ")"+ '.jpg';
+      file = new File(fileName);
+      i++;
+    }
 
     var opts = new JPEGSaveOptions();
     opts.quality = 10;                  //High quality JPEG save
