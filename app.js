@@ -295,7 +295,7 @@ async function fetchMetaDataForTencent(appId , info){
         }
         let appNameForSaving = '';
         if(appNameArr.length > 1){
-         appNameForSaving = appNameArr[0] + appNameArr[1];
+         appNameForSaving = appNameArr[0] +" " + appNameArr[1];
         } else{
             appNameForSaving = appNameInEnglish
         }
@@ -314,12 +314,23 @@ async function fetchMetaDataForTencent(appId , info){
         //*[@id="J_DetDataContainer"]/div/div[3]/div[6]/font/font
         let author = $('#J_DetDataContainer').find('div').first().find('.det-othinfo-container .det-othinfo-data').eq(2).text();
         let authorInEnglish = (await axios(returnOptions(author))).data[0].translations[0].text;
+        let authorArr = authorInEnglish.split(" ");
+        let authorName = "";
+        if(authorArr.length > 3){
+            for(var i = 0 ; i < authorArr.length ; i++){
+                if(i%3 == 0 && i != 0){
+                    authorName = authorName + "\r " + authorArr[i];
+                } else{
+                    authorName = authorName + " " + authorArr[i];
+                }
+            }
+        }
         console.log(author);
         return {
             appName: appNameWithNewLineCharacter,
             iconUrl: iconUrl,
             screenshotUrl : screenshotUrlArray,
-            author : authorInEnglish,
+            author : authorName,
             appNameForSaving : appNameForSaving
         };
     }catch(error){
